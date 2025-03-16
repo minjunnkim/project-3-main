@@ -22,10 +22,19 @@ class MyResNet18(nn.Module):
         # Student code begin
         ############################################################################
 
-        raise NotImplementedError(
-            "`__init__` function in "
-            + "`my_resnet.py` needs to be implemented"
+        base_model = resnet18(pretrained=True)
+
+        for param in base_model.parameters():
+            param.requires_grad = False
+
+        self.conv_layers = nn.Sequential(*list(base_model.children())[:-1])  
+
+        self.fc_layers = nn.Sequential(
+            nn.Flatten(),
+            nn.Linear(in_features=512, out_features=15)
         )
+
+        self.loss_criterion = nn.CrossEntropyLoss(reduction='mean')
 
         ############################################################################
         # Student code end
@@ -46,10 +55,8 @@ class MyResNet18(nn.Module):
         # Student code begin
         ############################################################################
         
-        raise NotImplementedError(
-            "`forward` function in "
-            + "`my_resnet.py` needs to be implemented"
-        )
+        features = self.conv_layers(x)  
+        model_output = self.fc_layers(features)
 
         ############################################################################
         # Student code end

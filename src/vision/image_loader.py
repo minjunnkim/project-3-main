@@ -62,11 +62,11 @@ class ImageLoader(data.Dataset):
         # Student code begin
         ############################################################################
 
-        raise NotImplementedError(
-            "`load_imagepaths_with_labels` function in "
-            + "`image_loader.py` needs to be implemented"
-        )
-
+        for class_name, label in class_labels.items():
+            class_dir = os.path.join(self.curr_folder, class_name)
+            for ext in ('*.jpg', '*.png', '*.jpeg', '*.bmp'):
+                for img_path in glob.glob(os.path.join(class_dir, ext)):
+                    img_paths.append((img_path, label))
 
         ############################################################################
         # Student code end
@@ -94,10 +94,10 @@ class ImageLoader(data.Dataset):
         # Student code begin
         ############################################################################
 
-        raise NotImplementedError(
-            "`get_classes` function in "
-            + "`image_loader.py` needs to be implemented"
+        class_names = sorted(
+            entry.name for entry in os.scandir(self.curr_folder) if entry.is_dir()
         )
+        classes = {class_name: idx for idx, class_name in enumerate(class_names)}
 
         ############################################################################
         # Student code end
@@ -121,10 +121,7 @@ class ImageLoader(data.Dataset):
         # Student code begin
         ############################################################################
 
-        raise NotImplementedError(
-            "`load_img_from_path` function in "
-            + "`image_loader.py` needs to be implemented"
-        )
+        img = Image.open(path).convert('L')
 
         ############################################################################
         # Student code end
@@ -154,10 +151,11 @@ class ImageLoader(data.Dataset):
         # Student code start
         ############################################################################
 
-        raise NotImplementedError(
-            "`__getitem__` function in "
-            + "`image_loader.py` needs to be implemented"
-        )
+        img_path, class_idx = self.dataset[index]
+        img = self.load_img_from_path(img_path)
+
+        if self.transform:
+            img = self.transform(img)
 
         ############################################################################
         # Student code end
@@ -177,10 +175,7 @@ class ImageLoader(data.Dataset):
         # Student code start
         ############################################################################
 
-        raise NotImplementedError(
-            "`__len__` function in "
-            + "`image_loader.py` needs to be implemented"
-        )
+        l = len(self.dataset)
         ############################################################################
         # Student code end
         ############################################################################
@@ -237,10 +232,21 @@ class MultiLabelImageLoader(data.Dataset):
         # Student code begin
         ############################################################################
 
-        raise NotImplementedError(
-            "`load_imagepaths_with_labels` function in "
-            + "`image_loader.py` needs to be implemented"
-        )
+        # Read CSV
+        df = pd.read_csv(self.labels_csv, header=None)
+
+        # Filter rows for valid scene types
+        valid_scenes = ['coast', 'highway', 'mountain', 'opencountry', 'street']
+        df = df[df[0].isin(valid_scenes)]
+
+        # Extract image path and multi-hot label vector
+        for _, row in df.iterrows():
+            scene_dir = os.path.join(self.curr_folder, row[0])
+            image_path = os.path.join(scene_dir, row[1])
+
+            # Columns 2 through 8 contain labels (assumed 7 attributes)
+            label = torch.tensor(row[2:9].astype(int).tolist(), dtype=torch.float32)
+            img_paths.append((image_path, label))
 
         ############################################################################
         # Student code end
@@ -266,11 +272,7 @@ class MultiLabelImageLoader(data.Dataset):
         # Student code begin
         ############################################################################
 
-        raise NotImplementedError(
-            "`load_img_from_path` function in "
-            + "`image_loader.py` needs to be implemented"
-        )
-
+        img = Image.open(path).convert('L')
 
         ############################################################################
         # Student code end
@@ -300,10 +302,11 @@ class MultiLabelImageLoader(data.Dataset):
         # Student code start
         ############################################################################
 
-        raise NotImplementedError(
-            "`__getitem__` function in "
-            + "`image_loader.py` needs to be implemented"
-        )
+        img_path, class_idxs = self.dataset[index]
+        img = self.load_img_from_path(img_path)
+
+        if self.transform:
+            img = self.transform(img)
 
         ############################################################################
         # Student code end
@@ -323,10 +326,8 @@ class MultiLabelImageLoader(data.Dataset):
         # Student code start
         ############################################################################
 
-        raise NotImplementedError(
-            "`__len__` function in "
-            + "`image_loader.py` needs to be implemented"
-        )
+        l = len(self.dataset)
+        
         ############################################################################
         # Student code end
         ############################################################################

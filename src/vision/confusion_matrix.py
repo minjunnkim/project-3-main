@@ -43,18 +43,30 @@ def generate_confusion_data(
     ##########################################################################
     # Student code begins here
     ##########################################################################
+    
+    device = torch.device("cuda" if cuda else "cpu")
+    model.to(device)
 
-    raise NotImplementedError(
-        "`generate_confusion_data` function in "
-        + "`confusion_matrix.py` needs to be implemented"
-    )
+    with torch.no_grad():
+        for i, (x, y) in enumerate(loader):
+            x, y = x.to(device), y.to(device)
+            logits = model(x)
+            pred = torch.argmax(logits, dim=1)
+            preds[i * batch_size : i * batch_size + x.size(0)] = pred.cpu().numpy()
+            targets[i * batch_size : i * batch_size + x.size(0)] = y.cpu().numpy()
+
+    for label, idx in label_to_idx.items():
+        class_labels[idx] = label
+        
+    preds = preds.tolist()
+    targets = targets.tolist()
 
     ##########################################################################
     # Student code ends here
     ##########################################################################
     model.train()
 
-    return targets.cpu().numpy(), preds.cpu().numpy(), class_labels
+    return targets, preds, class_labels
 
 
 def generate_confusion_matrix(
@@ -98,10 +110,7 @@ def generate_confusion_matrix(
         # Student code begins here
         ##########################################################################
     
-        raise NotImplementedError(
-            "`generate_confusion_matrix` function in "
-            + "`confusion_matrix.py` needs to be implemented"
-        )
+        confusion_matrix[target, prediction] += 1
         
         ##########################################################################
         # Student code ends here
@@ -112,11 +121,10 @@ def generate_confusion_matrix(
         # Student code begins here
         ##########################################################################
     
-        raise NotImplementedError(
-            "`generate_confusion_matrix` function in "
-            + "`confusion_matrix.py` needs to be implemented"
-        )
-    
+        row_sums = confusion_matrix.sum(axis=1, keepdims=True)
+        row_sums[row_sums == 0] = 1  # avoid division by zero
+        confusion_matrix = confusion_matrix / row_sums
+        
         ##########################################################################
         # Student code ends here
         ##########################################################################
@@ -275,17 +283,23 @@ def generate_accuracy_data(
     # Student code begins here
     ##########################################################################
 
-    raise NotImplementedError(
-            "`generate_accuracy_data` function in "
-            + "`confusion_matrix.py` needs to be implemented"
-        )
+    device = torch.device("cuda" if cuda else "cpu")
+    model.to(device)
+
+    with torch.no_grad():
+        for i, (x, y) in enumerate(loader):
+            x, y = x.to(device), y.to(device)
+            logits = model(x)
+            pred = (logits > 0.5).int()
+            preds[i * batch_size : i * batch_size + x.size(0)] = pred.cpu().numpy()
+            targets[i * batch_size : i * batch_size + x.size(0)] = y.cpu().numpy()
 
     ##########################################################################
     # Student code ends here
     ##########################################################################
     model.train()
 
-    return targets.cpu().numpy(), preds.cpu().numpy()
+    return targets, preds
 
 
 def generate_accuracy_table(
@@ -324,10 +338,10 @@ def generate_accuracy_table(
     # Student code begins here
     ##########################################################################
 
-    raise NotImplementedError(
-            "`generate_accuracy_table` function in "
-            + "`confusion_matrix.py` needs to be implemented"
-        )
+    for i in range(num_attributes):
+        correct = np.sum(targets[:, i] == preds[:, i])
+        total = targets.shape[0]
+        accuracy_table[i] = correct / total
 
     ##########################################################################
     # Student code ends here

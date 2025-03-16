@@ -30,10 +30,10 @@ def compute_accuracy(logits: torch.Tensor, labels: torch.Tensor) -> float:
     # Student code begin
     ############################################################################
 
-    raise NotImplementedError(
-        "`compute_accuracy` function in "
-        + "`dl_utils.py` needs to be implemented"
-    )
+    predictions = torch.argmax(logits, dim=1)
+    correct = (predictions == labels).sum().item()
+    total = labels.size(0)
+    batch_accuracy = correct / total
 
     ############################################################################
     # Student code end
@@ -65,10 +65,9 @@ def compute_loss(
     # Student code begin
     ############################################################################
 
-    raise NotImplementedError(
-        "`compute_loss` function in "
-        + "`dl_utils.py` needs to be implemented"
-    )
+    loss = model.loss_criterion(model_output, target_labels)
+    if is_normalize:
+        loss = loss / target_labels.size(0)
 
     ############################################################################
     # Student code end
@@ -95,16 +94,26 @@ def compute_multilabel_accuracy(logits: torch.Tensor, labels: torch.Tensor) -> f
     # Student code begin
     ############################################################################
 
-    raise NotImplementedError(
-        "`compute_multilabel_accuracy` function in "
-        + "`dl_utils.py` needs to be implemented"
-    )
+    # Convert logits to probabilities
+    # probs = torch.sigmoid(logits)
+    
+    # Apply threshold to get binary predictions
+    preds = (logits > 0.5).float()
+    
+    # Compute number of correct predictions
+    correct = (preds == labels).float().sum()
+    
+    # Compute total number of labels
+    total = labels.numel()
+    
+    # Compute accuracy
+    batch_accuracy = correct / total
 
     ############################################################################
     # Student code end
     ############################################################################
 
-    return batch_accuracy
+    return batch_accuracy.item()
 
 
 def save_trained_model_weights(
